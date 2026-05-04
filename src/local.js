@@ -7,7 +7,10 @@ const fs = require("fs").promises;
 
 async function run() {
   try {
-    const fileContents = await fs.readFile("./files/data.json", "utf8");
+    const fileContents = await fs.readFile(
+      "./files/data/sales_documents.json",
+      "utf8",
+    );
     const lastPollDate = await fs.readFile("./files/lastPoll.json", "utf8");
     const salesDocuments = JSON.parse(fileContents);
     await addLicensePlates(salesDocuments); // License Plates failed, system failure

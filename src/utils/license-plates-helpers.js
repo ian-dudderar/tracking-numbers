@@ -25,6 +25,12 @@ async function getLPDetailID(salesDocument) {
   salesDocument.License_Plates = licensePlates;
 }
 
+async function hydrateLicensePlate(licensePlate) {
+  await getLPDetails(licensePlate);
+  await getTrackingNumber(licensePlate);
+  await getSkus(licensePlate);
+}
+
 async function getLPDetails(licensePlate) {
   const detailID = licensePlate.License_Plate_Detail_ID;
   if (!detailID) return;
@@ -51,12 +57,9 @@ async function getSkus(licensePlate) {
   const res = await querySkus(itemNum);
   if (!res || res.length === 0) return;
   licensePlate.SKU = res[0]?.ShortName || null;
-  // console.log(sku);
 }
 
 module.exports = {
   getLPDetailID,
-  getLPDetails,
-  getTrackingNumber,
-  getSkus,
+  hydrateLicensePlate,
 };

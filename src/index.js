@@ -1,24 +1,27 @@
 const db = require("./connectors/MXWDSQL2/db");
 const fs = require("fs");
 
+const { handleError } = require("./utils/error-handlers");
+
 const { pollData, setLastPollDate } = require("./scripts/poll");
 const { parseSalesDocuments } = require("./utils/parsers");
 const { addLicensePlates } = require("./scripts/add-license-plates");
 const { uploadTrackingNumbers } = require("./scripts/upload-tracking-numbers");
 
-const args = process.argv.slice(2);
-const getArg = (name) => {
-  const arg = args.find((a) => a.startsWith(`${name}=`));
-  return arg ? arg.split("=")[1] : undefined;
-};
+// const args = process.argv.slice(2);
+// const getArg = (name) => {
+//   const arg = args.find((a) => a.startsWith(`${name}=`));
+//   return arg ? arg.split("=")[1] : undefined;
+// };
 
-const poNum = getArg("poNum");
+// const poNum = getArg("poNum");
 
-run(poNum);
+run();
 
 async function run(poNum = null) {
   const isBatch = !poNum;
 
+  // Determines whether we run the entire program or just a single order based on presence of poNum argument
   const config = isBatch
     ? {
         mode: "batch",
@@ -35,34 +38,51 @@ async function run(poNum = null) {
         message: `Processing order with PO Number: ${poNum}`,
       };
 
-  await executeWorkflow(config);
+  // await executeWorkflow(config);
+  await executeWorkflow();
 }
 
-async function executeWorkflow(config) {
-  console.log(config.message);
+async function executeWorkflow(
+  config = {
+    mode: "batch",
+    pollArg: undefined,
+    shouldSave: true,
+    shouldSetPollDate: true,
+    message: "Polling for new orders since last poll date...",
+  },
+) {
+  console.log("Starting workflow execution...");
   try {
+    // Step 0) Connect to DB
     await db.connect();
-    const { pollRes, lastPollDate } = await pollData(config.pollArg); // Poll failed, system failure
 
+    // Step 1) Poll Data
+    const { pollRes, lastPollDate } = await pollData(config.pollArg);
+
+    // Step 2) Parse Data
     const salesDocuments = parseSalesDocuments(pollRes);
-    await addLicensePlates(salesDocuments); // License Plates failed, system failure
 
-    if (config.shouldSave) {
-      saveToFile(salesDocuments);
-    }
+    // Step 3) Add and Hydrate License Plates
+    await addLicensePlates(salesDocuments);
 
+    // Step 4) Save Sales Documents to file
+    saveToFile(salesDocuments);
+
+    // Step 5) Upload Tracking Numbers
     const newPollDate = await uploadTrackingNumbers(
       salesDocuments,
       config.mode === "batch" ? lastPollDate : null,
-    ); // Upload failed as a whole, not individual, system failure
+    );
 
+    // Step 6) Set new poll date if in batch mode
     if (config.shouldSetPollDate) {
       setLastPollDate(newPollDate);
     }
-  } catch (e) {
-    console.error("Error during polling:", e);
+  } catch (error) {
+    if (!error.type) error.type = "System";
+    handleError(error);
   } finally {
-    console.log("Polling process completed.");
+    console.log("Ending workflow execution...");
     await db.close();
   }
 }
@@ -70,7 +90,7 @@ async function executeWorkflow(config) {
 function saveToFile(salesDocuments) {
   const jsonData = JSON.stringify(salesDocuments, null, 2);
 
-  fs.writeFile("files/data.json", jsonData, (err) => {
+  fs.writeFile("files/data/sales_documents.json", jsonData, (err) => {
     if (err) {
       console.error("Error writing file:", err);
     } else {

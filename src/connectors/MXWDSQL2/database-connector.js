@@ -20,6 +20,7 @@ class DatabaseConnector {
 
   // Initialize connection pool
   async connect() {
+    console.log("Attempting to connect to database...");
     if (this.pool?.connected) return this.pool; // already connected
     if (this.pool && !this.pool.connected) {
       this.pool = null; // stale/closed pool reference
@@ -49,17 +50,21 @@ class DatabaseConnector {
         await pool.connect();
 
         // Optional: listen for pool errors
-        pool.on("error", (err) => {
-          console.error("SQL Pool Error:", err);
+        pool.on("error", (error) => {
+          console.error("SQL pool error:", error);
+          this.pool = null;
+          this.connecting = null;
+          throw new Error("SQL pool error: " + error.message);
         });
 
         this.pool = pool;
 
         console.log("Database connected successfully.");
         return pool;
-      } catch (err) {
-        console.error("Database connection failed:", err);
-        throw err;
+      } catch (error) {
+        console.error("Database connection failed:", error);
+        error.message = "Database connection failed.";
+        throw error;
       } finally {
         this.connecting = null; // clear the connecting promise
       }
@@ -72,13 +77,17 @@ class DatabaseConnector {
   async query(queryString, params = {}) {
     const pool = await this.connect();
     const request = pool.request();
-
     for (const [key, value] of Object.entries(params)) {
       request.input(key, value);
     }
 
-    const result = await request.query(queryString);
-    return result.recordset;
+    try {
+      throw new Error("HIT QUERY");
+      const result = await request.query(queryString);
+      return result.recordset;
+    } catch (e) {
+      throw e;
+    }
   }
 
   // Close the connection pool

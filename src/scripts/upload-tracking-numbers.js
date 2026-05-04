@@ -2,16 +2,14 @@ const {
   postOrderTracking,
 } = require("../connectors/channel-advisor/channel-advisor-service");
 
+const { handleError } = require("../utils/error-handlers");
+
 async function uploadTrackingNumbers(salesDocuments, lastPollDate) {
   let pollDate = lastPollDate;
 
   // Per Order
   for (const salesDocument of salesDocuments) {
-    try {
-      await postOrderTracking(salesDocument);
-    } catch (e) {
-      // Error processing order, need to re-run?
-    }
+    await postOrderTracking(salesDocument);
 
     // We keep track of the most recently updated order that has been successfully processed
     // So that the next time we poll, we only pull orders past that date.

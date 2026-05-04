@@ -120,7 +120,6 @@ class ChannelAdvisorConnector {
 
     // If there is data, add it to the request body
     if (data) {
-      console.log("Hit with data:", data);
       fetchParams.body = typeof data === "string" ? data : JSON.stringify(data);
     }
 
@@ -131,10 +130,19 @@ class ChannelAdvisorConnector {
 
     // Make the request
     const response = await limiter.schedule(() => fetch(url, fetchParams));
-
+    const status = response.status;
     const text = await response.text();
     const responseBody = text ? JSON.parse(text) : null;
-    // const responseBody = await response.json();
+
+    if (!response.ok) {
+      const error = new Error("Request failed.");
+      error.api = {
+        status,
+        message: responseBody?.Message || null,
+      };
+      throw error;
+    }
+
     return responseBody;
   }
 
@@ -182,22 +190,27 @@ class ChannelAdvisorConnector {
             ],
           },
         };
-
         await this.ensureAccessToken();
-        // console.log("**********");
-        // console.log(body);
 
         const url = `${BASE_URL}/v1/Orders(${orderId})/Ship`;
-        const response = await this.makeRequest({
+        return this.makeRequest({
           url: url,
           method: "POST",
           data: body,
         });
-        console.log("Done fetching");
 
-        console.log("Shipment post response:", response);
-        return null;
-        // return response;
+        // try {
+        //   await this.ensureAccessToken();
+
+        //   const url = `${BASE_URL}/v1/Orders(${orderId})/Ship`;
+        //   const response = await this.makeRequest({
+        //     url: url,
+        //     method: "POST",
+        //     data: body,
+        //   });
+        // } catch (e) {
+        //   throw e;
+        // }
       },
     },
   };

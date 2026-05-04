@@ -40,8 +40,6 @@ class SalespadConnector {
       throw new Error(`Request failed: ${res.status} - ${errorText}`);
     }
     const data = await res.json();
-    // console.log("Request comleted successfully. Response data:");
-    // console.log(data);
 
     return data;
   }

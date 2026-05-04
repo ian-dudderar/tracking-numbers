@@ -18,8 +18,9 @@ function getLastPollDate() {
   }
 }
 
-function setLastPollDate(date) {
+function setLastPollDate(date, test = false) {
   console.log("Setting last poll date...", date);
+  if (test) return;
   try {
     fs.writeFileSync(
       FILE_PATH,
