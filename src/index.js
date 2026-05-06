@@ -1,5 +1,6 @@
 const db = require("./connectors/MXWDSQL2/db");
 const fs = require("fs");
+const path = require("path");
 
 const { handleError } = require("./utils/error-handlers");
 
@@ -90,11 +91,9 @@ async function executeWorkflow(
 function saveToFile(salesDocuments) {
   const jsonData = JSON.stringify(salesDocuments, null, 2);
 
-  fs.writeFile("files/data/sales_documents.json", jsonData, (err) => {
-    if (err) {
-      console.error("Error writing file:", err);
-    } else {
-      console.log("File successfully written!");
-    }
-  });
+  const dir = path.join(process.cwd(), "files", "data");
+  const filePath = path.join(dir, "sales_documents.json");
+
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(filePath, jsonData);
 }

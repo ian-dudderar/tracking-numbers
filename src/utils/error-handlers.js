@@ -1,9 +1,10 @@
 const fs = require("fs");
+const path = require("path");
 
 const RETRY_TYPES = new Set([
   "LICENSE_PLATE_PROCESSING",
   "POST_ORDER_TRACKING",
-]); // Example retryable types
+]);
 
 function handleError(error) {
   console.error("Error:", error.message);
@@ -20,7 +21,11 @@ function recordFailure(error) {
     message: error.message || "No message",
     payload: error.payload || {},
   };
-  fs.appendFileSync("files/errors/failures.log", JSON.stringify(entry) + "\n");
+  const dir = path.join(process.cwd(), "files", "errors");
+  const filePath = path.join(dir, "failures.log");
+
+  fs.mkdirSync(dir, { recursive: true });
+  fs.appendFileSync(filePath, JSON.stringify(entry) + "\n");
 }
 
 function enqueueRetry(error) {
@@ -33,10 +38,11 @@ function enqueueRetry(error) {
     payload: error.payload || {},
   };
 
-  fs.appendFileSync(
-    "files/queues/retry_queue.jsonl",
-    JSON.stringify(entry) + "\n",
-  );
+  const dir = path.join(process.cwd(), "files", "errors");
+  const filePath = path.join(dir, "retry_queue.jsonl");
+
+  fs.mkdirSync(dir, { recursive: true });
+  fs.appendFileSync(filePath, JSON.stringify(entry) + "\n");
 }
 
 function isRetryable(error) {

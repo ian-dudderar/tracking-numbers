@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const FILE_PATH = path.join(__dirname, "..", "..", "files", "lastPoll.json");
+const DIR = path.join(process.cwd(), "files");
+const FILE_PATH = path.join(DIR, "lastPoll.json");
 
 function getLastPollDate() {
   console.log("Getting last poll date...", FILE_PATH);
@@ -18,10 +19,10 @@ function getLastPollDate() {
   }
 }
 
-function setLastPollDate(date, test = false) {
+function setLastPollDate(date) {
   console.log("Setting last poll date...", date);
-  if (test) return;
   try {
+    fs.mkdirSync(DIR, { recursive: true });
     fs.writeFileSync(
       FILE_PATH,
       JSON.stringify({ lastPoll: date.toISOString() }),
