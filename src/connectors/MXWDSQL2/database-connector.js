@@ -82,7 +82,6 @@ class DatabaseConnector {
     }
 
     try {
-      throw new Error("HIT QUERY");
       const result = await request.query(queryString);
       return result.recordset;
     } catch (e) {
