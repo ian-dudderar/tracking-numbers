@@ -1,8 +1,11 @@
 const { getLastPollDate, setLastPollDate } = require("../utils/poll-helpers");
+// const {
+//   fetchSalesDocuments,
+//   fetchSalesDocument,
+// } = require("../connectors/salespad/salespad-service");
 const {
   fetchSalesDocuments,
-  fetchSalesDocument,
-} = require("../connectors/salespad/salespad-service");
+} = require("../connectors/MXWDSQL2/database-service");
 
 async function pollData(poNumber = null) {
   try {
@@ -11,6 +14,8 @@ async function pollData(poNumber = null) {
 
     // Add order by date ASC to ensure we can update the last poll date correctly after processing
     const pollRes = await fetchSalesDocuments(lastPollDate);
+    console.log(`Polling successful. Retrieved ${pollRes.length} records.`);
+    // console.log("Sample record:", pollRes[0] || "No records found");
     return { pollRes, lastPollDate };
   } catch (e) {
     const error = new Error(`Polling failed: ${e.message}`, { cause: e });

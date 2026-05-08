@@ -198,19 +198,6 @@ class ChannelAdvisorConnector {
           method: "POST",
           data: body,
         });
-
-        // try {
-        //   await this.ensureAccessToken();
-
-        //   const url = `${BASE_URL}/v1/Orders(${orderId})/Ship`;
-        //   const response = await this.makeRequest({
-        //     url: url,
-        //     method: "POST",
-        //     data: body,
-        //   });
-        // } catch (e) {
-        //   throw e;
-        // }
       },
     },
   };

@@ -1,13 +1,15 @@
 function parseSalesDocuments(data) {
-  const documents = data.Items || [];
+  const documents = data || [];
+  console.log(`Parsing ${documents.length} sales documents...`);
   return documents.map((doc) => {
     try {
+      // console.log(`Parsing document: ${doc}`);
       return {
-        Sales_Doc_Num: doc.Sales_Doc_Num.trim(),
-        DEX_ROW_TS: doc.Doc_Date.trim(),
-        CA_Order_ID: doc.USRDEF03.trim(),
-        Customer_PO_Num: doc.Customer_PO_Num.trim(),
-        Warehouse: doc.Warehouse_Code.trim(),
+        Sales_Doc_Num: doc.Sales_Doc_Num?.trim(),
+        DEX_ROW_TS: doc.DEX_ROW_TS,
+        CA_Order_ID: doc.USRDEF03?.trim(),
+        Customer_PO_Num: doc.Customer_PO_Num?.trim(),
+        Warehouse: doc.Warehouse_Code?.trim(),
       };
     } catch (e) {
       const error = new Error(

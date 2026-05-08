@@ -20,6 +20,7 @@ function recordFailure(error) {
     type: error.type || "Unknown",
     message: error.message || "No message",
     payload: error.payload || {},
+    cause: error.cause || null,
   };
   const dir = path.join(process.cwd(), "files", "errors");
   const filePath = path.join(dir, "failures.log");

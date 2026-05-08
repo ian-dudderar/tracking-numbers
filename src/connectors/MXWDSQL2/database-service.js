@@ -1,5 +1,31 @@
 const db = require("./db");
 
+async function fetchSalesDocuments(lastPollDate) {
+  console.log("Fetching sales documents updated since:", lastPollDate);
+  const query = `
+  SELECT Sales_Doc_Num,
+  Sales_Doc_ID,
+  DEX_ROW_TS,
+  Customer_PO_Num,
+  Warehouse_Code,
+  USRDEF03
+  FROM [MAX].[dbo].[spvSalesDocumentSearchDEX]
+  WHERE DEX_ROW_TS >= @lastPollDate
+  AND Status LIKE '%TRK%'
+  AND Sales_Doc_Type = 'ORDER'
+  AND (
+        Warehouse_Code = 'BARRETT'
+        OR (
+            Warehouse_Code = 'CASTLEGATE'
+            AND Customer_Num NOT IN ('0003500', '0003501')
+        )
+      )
+  `;
+
+  const result = await db.query(query, { lastPollDate: lastPollDate });
+
+  return result;
+}
 // Retrieves a list of License Plate Detail IDS for a sales document number
 async function queryLicensePlateDetailIDs(salesDocNum) {
   console.log(`Fetching license plate detail IDs for: ${salesDocNum}`);
@@ -33,6 +59,7 @@ async function querySkus(itemNumber) {
 }
 
 module.exports = {
+  fetchSalesDocuments,
   queryLicensePlateDetailIDs,
   queryLicensePlateDetails,
   queryTrackingNumber,
