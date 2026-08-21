@@ -22,8 +22,10 @@ async function getOrderItems(orderId) {
 }
 
 async function postTrackingNumber(orderId, trackingNumber, sku) {
+  if (!trackingNumber) return;
   console.log(`Setting Tracking Number: ${trackingNumber} for SKU: ${sku}`);
-  // await ChannelAdvisor.Orders.Shipment.post(orderId, sku, trackingNumber);
+  await ChannelAdvisor.Orders.Shipment.post(orderId, sku, trackingNumber);
+  return null;
 }
 
 module.exports = {

@@ -26,53 +26,72 @@ run();
 
 async function run(poNum = null) {
   // Determines whether we run the entire program or just a single order based on presence of poNum argument
+  const brand = process.argv[2].toLowerCase();
 
   // await executeWorkflow(config);
-  await executeWorkflow();
+  await executeWorkflow(brand.toUpperCase());
 }
 
-async function executeWorkflow() {
+async function executeWorkflow(brand) {
   console.log("Starting workflow execution...");
-  try {
-    // // Step 0) Connect to DB
-    // await db.connect();
-    // // Step 1) Poll Data
-    // const { pollRes, lastPollDate } = await pollData();
-    // // Step 2) Parse Data
-    // const salesDocuments = parseSalesDocuments(pollRes);
-    // // Step 3) Add and Hydrate License Plates
-    // await addLicensePlates(salesDocuments);
-    // // Step 4) Save Sales Documents to file
-    // saveToFile(salesDocuments);
-    const fileContents = await fs.promises.readFile(
-      "./files/data/sales_documents.json",
-      "utf8",
-    );
-    const salesDocuments = JSON.parse(fileContents);
+  console.log(brand);
+  const CODE = process.env[`${brand}_CODE`];
 
+  try {
+    // Step 0) Connect to DB
+    await db.connect();
+    // Step 1) Poll Data
+    const { pollRes, lastPollDate } = await pollData(CODE);
+    // Step 2) Parse Data
+    const salesDocuments = parseSalesDocuments(pollRes);
+    // Step 3) Add and Hydrate License Plates
+    await addLicensePlates(salesDocuments);
+    // Step 4) Save Sales Documents to file
+    saveToFile(salesDocuments);
+    // const fileContents = await fs.promises.readFile(
+    //   "./files/data/sales_documents.json",
+    //   "utf8",
+    // );
+    // const salesDocuments = JSON.parse(fileContents);
     for (const order of salesDocuments) {
       const orderId = order.CA_Order_ID;
-      await getOrderItems(orderId);
-      const items = await getOrderItems(orderId);
-      const lineItems = extractLineItems(items);
-
-      const trackingMap = generateTrackingMap(order.License_Plates);
+      let lineItems, trackingMap;
+      try {
+        await getOrderItems(orderId);
+        const items = await getOrderItems(orderId);
+        lineItems = extractLineItems(items);
+        trackingMap = generateTrackingMap(order.License_Plates);
+      } catch (e) {
+        const error = new Error(
+          `Failed to fetch/prepare order ${order.Customer_PO_Num} (CA ID: ${orderId})`,
+          { cause: e },
+        );
+        error.type = "ORDER_ITEM_FETCH";
+        error.payload = { orderId, poNum: order.Customer_PO_Num };
+        handleError(error);
+        continue;
+      }
       console.log(
         `Order: ${order.Customer_PO_Num}. ChannelAdvisor ID: ${order.CA_Order_ID}`,
       );
       for (const lineItem of lineItems) {
-        const gpItemNum = await getProductAttribute(
-          lineItem.ca_id,
-          "GP Item Number",
-        );
-        const trackingNums = trackingMap.get(gpItemNum.toUpperCase());
-        const trackingNum = trackingNums ? trackingNums.shift() : null;
-        await postTrackingNumber(
-          orderId,
-          trackingNum,
-          lineItem.ca_id,
-          lineItem.sku,
-        );
+        try {
+          const gpItemNum = await getProductAttribute(
+            lineItem.ca_id,
+            "GP Item Number",
+          );
+          const trackingNums = trackingMap.get(gpItemNum.toUpperCase());
+          const trackingNum = trackingNums ? trackingNums.shift() : null;
+          await postTrackingNumber(orderId, trackingNum, lineItem.sku);
+        } catch (e) {
+          const error = new Error(
+            `Failed to post tracking number for SKU ${lineItem.sku} on order ${order.Customer_PO_Num}`,
+            { cause: e },
+          );
+          error.type = "POST_ORDER_TRACKING";
+          error.payload = { orderId, sku: lineItem.sku, caId: lineItem.ca_id };
+          handleError(error);
+        }
       }
     }
   } catch (error) {

@@ -1,6 +1,6 @@
 const db = require("./db");
 
-async function fetchSalesDocuments(lastPollDate) {
+async function fetchSalesDocuments(customerNumber, lastPollDate) {
   console.log("Fetching sales documents updated since:", lastPollDate);
   const query = `
   SELECT Sales_Doc_Num,
@@ -13,16 +13,14 @@ async function fetchSalesDocuments(lastPollDate) {
   WHERE DEX_ROW_TS >= @lastPollDate
   AND Status LIKE '%TRK%'
   AND Sales_Doc_Type = 'ORDER'
-  AND (
-        Warehouse_Code = 'BARRETT'
-        OR (
-            Warehouse_Code = 'CASTLEGATE'
-            AND Customer_Num NOT IN ('0003500', '0003501')
-        )
-      )
+  AND Customer_Num = @customerNumber
+
   `;
 
-  const result = await db.query(query, { lastPollDate: lastPollDate });
+  const result = await db.query(query, {
+    lastPollDate: lastPollDate,
+    customerNumber,
+  });
 
   return result;
 }

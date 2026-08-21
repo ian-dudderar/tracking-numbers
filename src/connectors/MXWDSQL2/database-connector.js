@@ -20,7 +20,6 @@ class DatabaseConnector {
 
   // Initialize connection pool
   async connect() {
-    console.log("Attempting to connect to database...");
     if (this.pool?.connected) return this.pool; // already connected
     if (this.pool && !this.pool.connected) {
       this.pool = null; // stale/closed pool reference
