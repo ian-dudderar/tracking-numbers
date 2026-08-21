@@ -1,3 +1,56 @@
+function parseOrderItems(order) {
+  // console.log(data[0]);
+  return {
+    ca_order_id: order.ID,
+    po_num: order.SiteOrderID,
+    items:
+      order.Items?.map((item) => ({
+        sku: item.Sku,
+        ca_id: item.ProductID,
+        quantity: item.Quantity,
+        is_bundle: item.IsBundle,
+        bundle_components:
+          item.BundleComponents?.map((component) => ({
+            sku: component.Sku,
+            ca_id: component.ProductID,
+            quantity: component.Quantity,
+          })) || [],
+      })) || [],
+  };
+  return orders.map((order) => {
+    try {
+      return {
+        ca_order_id: order.ID,
+        po_num: order.SiteOrderID,
+        items:
+          order.Items?.map((item) => ({
+            sku: item.Sku,
+            ca_id: item.ProductID,
+            quantity: item.Quantity,
+            is_bundle: item.IsBundle,
+            bundle_components:
+              item.BundleComponents?.map((component) => ({
+                sku: component.Sku,
+                ca_id: component.ProductID,
+                quantity: component.Quantity,
+              })) || [],
+          })) || [],
+      };
+    } catch (e) {
+      const error = new Error(
+        `Parsing failed for order with CA_Order_ID: ${order.ID}. ${e}`,
+        { cause: e },
+      );
+      error.type = "PARSING";
+      error.payload = {
+        CA_Order_ID: order.CA_Order_ID || "Unknown",
+        License_Plates: order.License_Plates || [],
+      };
+      throw error;
+    }
+  });
+}
+
 function parseSalesDocuments(data) {
   const documents = data || [];
   console.log(`Parsing ${documents.length} sales documents...`);
@@ -30,5 +83,6 @@ function parseSalesDocuments(data) {
 }
 
 module.exports = {
+  parseOrderItems,
   parseSalesDocuments,
 };

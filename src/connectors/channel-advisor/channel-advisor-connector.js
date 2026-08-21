@@ -200,6 +200,29 @@ class ChannelAdvisorConnector {
         });
       },
     },
+    Items: {
+      get: async (orderId) => {
+        await this.ensureAccessToken();
+        const url = `${BASE_URL}/v1/Orders(${orderId})?$expand=Items($expand=BundleComponents)`;
+        return this.makeRequest({
+          url: url,
+          method: "GET",
+        });
+      },
+    },
+  };
+
+  Products = {
+    Attribute: {
+      get: async (productId, attribute) => {
+        await this.ensureAccessToken();
+        const url = `${BASE_URL}/v1/Products(${productId})/Attributes('${attribute}')`;
+        return this.makeRequest({
+          url: url,
+          method: "GET",
+        });
+      },
+    },
   };
 
   async waitForExport(token) {

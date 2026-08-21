@@ -2,41 +2,32 @@ const ChannelAdvisorConnector = require("./channel-advisor-connector");
 const ChannelAdvisor = ChannelAdvisorConnector.getInstance();
 
 const { handleError } = require("../../utils/error-handlers");
+const { parseOrderItems } = require("../../utils/parsers");
 
 require("dotenv").config();
 
-async function postOrderTracking(order) {
-  const orderId = order.CA_Order_ID;
-  const lineItems = order.License_Plates;
-  const missingParams = [];
-  if (!orderId) missingParams.push("Order ID");
-  if (!lineItems) missingParams.push("Line Items");
-  if (missingParams.length > 0) {
-    const error = new Error(`${missingParams.join(" and ")} required.`);
-    error.type = "MISSING_PARAMS";
-    error.payload = { order };
-    handleError(error);
-    return;
-  }
+async function getProductAttribute(productId, attributes) {
+  const res = await ChannelAdvisor.Products.Attribute.get(
+    productId,
+    attributes,
+  );
+  const value = res.Value;
+  return value;
+}
 
-  console.log("Posting tracking for order:", orderId);
-  try {
-    for (const item of lineItems) {
-      const { SKU, Tracking_number } = item;
-      await ChannelAdvisor.Orders.Shipment.post(orderId, SKU, Tracking_number);
-    }
-  } catch (e) {
-    const error = new Error(`Error posting tracking for order ${orderId}.`, {
-      cause: e,
-    });
-    error.type = "POST_ORDER_TRACKING";
-    error.payload = { order };
-    handleError(error);
-  }
+async function getOrderItems(orderId) {
+  const res = await ChannelAdvisor.Orders.Items.get(orderId);
+  const order = parseOrderItems(res);
+  return order;
+}
 
-  return null;
+async function postTrackingNumber(orderId, trackingNumber, sku) {
+  console.log(`Setting Tracking Number: ${trackingNumber} for SKU: ${sku}`);
+  // await ChannelAdvisor.Orders.Shipment.post(orderId, sku, trackingNumber);
 }
 
 module.exports = {
-  postOrderTracking,
+  getProductAttribute,
+  getOrderItems,
+  postTrackingNumber,
 };

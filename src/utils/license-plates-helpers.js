@@ -28,7 +28,7 @@ async function getLPDetailID(salesDocument) {
 async function hydrateLicensePlate(licensePlate) {
   await getLPDetails(licensePlate);
   await getTrackingNumber(licensePlate);
-  await getSkus(licensePlate);
+  // await getSkus(licensePlate);
 }
 
 async function getLPDetails(licensePlate) {
